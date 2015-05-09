@@ -10,7 +10,7 @@ namespace bskpreview
 {
     interface ICipher
     {
-        byte[] EncryptFile(string filePathToEncrypt, int keySize, int blockSize, string cipherMode);
+        void EncryptFile(string filePathToEncrypt, int keySize, int blockSize, string cipherMode);
         byte[] DecryptFile(string filePathToDecrypt, string cipherMode);
     }
 }

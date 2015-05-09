@@ -9,43 +9,44 @@ using System.Windows;
 
 namespace bskpreview
 {
-    class CipherClass : ICipher
+    class CipherClass
     {
-        private byte[] tmpKey;
-        private byte[] tmpIV;
+        public byte[] Key { get; private set; }
+        public byte[] IV { get; private set; }
+        public byte[] EncryptedFile { get; private set; }
+
+        public string EncryptionSourceFilePath { get; set; }
+        public string DecriptionSourceFilePath { get; set; }
+        public string CipherMode { get; set; }
+        public int KeySize { get; set; }
+        public int BlockSize { get; set; }
 
         #region Public methods
 
-        public byte[] EncryptFile(string filePath, int keySize, int blockSize, string cipherMode)
+        public void EncryptFile()
         {
             byte[] encryptedBytes;
-
             try
             {
-                using (RijndaelManaged rijndaelManaged = new RijndaelManaged())
+                using (var rijndaelManaged = new RijndaelManaged())
                 {
-
-                    rijndaelManaged.Mode = this.parseToCipherMode(cipherMode);
-                    rijndaelManaged.KeySize = keySize;
-                    rijndaelManaged.BlockSize = blockSize;
+                    rijndaelManaged.Mode = this.parseToCipherMode(this.CipherMode);
+                    rijndaelManaged.KeySize = this.KeySize;
+                    rijndaelManaged.BlockSize = this.BlockSize;
 
                     rijndaelManaged.GenerateIV();
                     rijndaelManaged.GenerateKey();
 
                     ICryptoTransform encryptor = rijndaelManaged.CreateEncryptor(rijndaelManaged.Key, rijndaelManaged.IV);
 
-                    //TO CHECK 
-                    this.tmpKey = rijndaelManaged.Key;
-                    this.tmpIV = rijndaelManaged.IV;
-                    //CHECK
+                    this.Key = rijndaelManaged.Key;
+                    this.IV = rijndaelManaged.IV;
 
-                   // XmlParser.CreateXml(filePath, cipherMode, blockSize, 1, keySize, );
+                    var fileBytes = File.ReadAllBytes(this.EncryptionSourceFilePath);
 
-                    var fileBytes = File.ReadAllBytes(filePath);
-
-                    using (MemoryStream msEncrypt = new MemoryStream())
+                    using (var msEncrypt = new MemoryStream())
                     {
-                        using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                        using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
                         {
                             csEncrypt.Write(fileBytes, 0, fileBytes.Length);
                             csEncrypt.FlushFinalBlock();
@@ -59,61 +60,60 @@ namespace bskpreview
                 MessageBox.Show(e.Message);
                 encryptedBytes = null;
             }
-
-            return encryptedBytes;
+            this.EncryptedFile = encryptedBytes;
         }
 
-        public byte[] DecryptFile(string filePath, string cipherMode)
-        {
-            byte[] decrypteBytes;
+        //public byte[] DecryptFile(string filePath, string cipherMode)
+        //{
+        //    byte[] decrypteBytes;
 
-            using (RijndaelManaged rijAlg = new RijndaelManaged())
-            {
+        //    using (RijndaelManaged rijAlg = new RijndaelManaged())
+        //    {
 
-                rijAlg.Mode = this.parseToCipherMode(cipherMode);
-                rijAlg.Key = this.tmpKey;
-                rijAlg.IV = this.tmpIV;
+        //        rijAlg.Mode = this.parseToCipherMode(cipherMode);
+        //        rijAlg.Key = this.tmpKey;
+        //        rijAlg.IV = this.tmpIV;
 
-                var fileBytes = File.ReadAllBytes(filePath);
-                decrypteBytes = new byte[fileBytes.Length];
+        //        var fileBytes = File.ReadAllBytes(filePath);
+        //        decrypteBytes = new byte[fileBytes.Length];
 
-                // Create the streams used for decryption.
-                using(var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
-                using (MemoryStream msDecrypt = new MemoryStream(fileBytes))
-                {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        csDecrypt.Read(decrypteBytes, 0, decrypteBytes.Length);
-                    }
-                }
-            }
+        //        // Create the streams used for decryption.
+        //        using(var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
+        //        using (MemoryStream msDecrypt = new MemoryStream(fileBytes))
+        //        {
+        //            using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+        //            {
+        //                csDecrypt.Read(decrypteBytes, 0, decrypteBytes.Length);
+        //            }
+        //        }
+        //    }
 
-            return decrypteBytes;
-        }
+        //    return decrypteBytes;
+        //}
 
         #endregion
 
         #region Private Methods
 
-        private CipherMode parseToCipherMode(string input)
+        private System.Security.Cryptography.CipherMode parseToCipherMode(string input)
         {
-            CipherMode cipherMode;
+            System.Security.Cryptography.CipherMode cipherMode;
             switch (input)
             {
                 case "ECB":
-                    cipherMode = CipherMode.ECB;
+                    cipherMode = System.Security.Cryptography.CipherMode.ECB;
                     break;
                 case "CBC":
-                    cipherMode = CipherMode.CBC;
+                    cipherMode = System.Security.Cryptography.CipherMode.CBC;
                     break;
                 case "CFB":
-                    cipherMode = CipherMode.CFB;
+                    cipherMode = System.Security.Cryptography.CipherMode.CFB;
                     break;
                 case "OFB":
-                    cipherMode = CipherMode.OFB;
+                    cipherMode = System.Security.Cryptography.CipherMode.OFB;
                     break;
                 default:
-                    cipherMode = new CipherMode();
+                    cipherMode = new System.Security.Cryptography.CipherMode();
                     break;
             }
             return cipherMode;
