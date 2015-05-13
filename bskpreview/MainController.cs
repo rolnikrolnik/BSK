@@ -79,7 +79,7 @@ namespace bskpreview
             var encryptedFile = this.fileController.GetEncryptedFile(this.DecryptionSourceFilePath);
             
             var identity = encryptedFileHeader.Receivers.Find(x => x.Name == this.Identity);
-            byte[] privateKey;
+            byte[] privateKey = new byte[encryptedFileHeader.KeySize];
             try
             {
                 privateKey =
