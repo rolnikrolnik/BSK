@@ -55,7 +55,7 @@
     </ApplicationDefinition>
     <Compile Include="Cryptogram.cs" />
     <Compile Include="MainController.cs" />
-    <Compile Include="XMLParser.cs" />
+    <Compile Include="RSAPublicKey.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -66,7 +66,6 @@
     </Compile>
     <Compile Include="CipherClass.cs" />
     <Compile Include="FileController.cs" />
-    <Compile Include="ICipher.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

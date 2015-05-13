@@ -1,7 +1,7 @@
 ﻿<Window x:Class="bskpreview.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="450" Width="450">
+        Title="MainWindow" Height="450" Width="470">
     <Grid Margin="0,0,0,0">
         <TabControl>
             <TabItem Header="Szyfrowanie">
@@ -17,36 +17,37 @@
                         <Button Name="EncryptionDestinationFileButton" Margin="10,0,10,10" Content="Wybierz plik" Height="20" Click="OpenFileButton_Click"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label Margin="10,10,0,10"  Grid.Row="0">Tryb pracy:</Label>
-                        <ComboBox Name="ModeComboBox" Margin="0,10,10,10" SelectedIndex="0"  Height="20" Width="50" >
+                        <Label Margin="0,10,0,10"  Grid.Row="0">Tryb :</Label>
+                        <ComboBox Name="ModeComboBox" Margin="0,10,0,10" SelectedIndex="0"  Height="20" Width="50" SelectionChanged="ModeComboBox_SelectionChanged" >
                             <ComboBoxItem Name="cbi1">ECB</ComboBoxItem>
                             <ComboBoxItem Name="cbi2">CBC</ComboBoxItem>
                             <ComboBoxItem Name="cbi3">CFB</ComboBoxItem>
                             <ComboBoxItem Name="cbi4">OFB</ComboBoxItem>
                         </ComboBox>
-                        <Label Margin="10,10,0,10"  Grid.Row="0">Dł. klucza:</Label>
-                        <ComboBox Name="KeySizeComboBox" Margin="0,10,10,10"  SelectedIndex="0"  Height="20" Width="50" >
+                        <Label Margin="0,10,0,10"  Grid.Row="0">Dł. klucza:</Label>
+                        <ComboBox Name="KeySizeComboBox" Margin="0,10,0,10"  SelectedIndex="0"  Height="20" Width="50" >
                             <ComboBoxItem Name="c21">128</ComboBoxItem>
                             <ComboBoxItem Name="c22">192</ComboBoxItem>
                             <ComboBoxItem Name="c23">256</ComboBoxItem>
                         </ComboBox>
-                        <Label Margin="10,10,0,10"  Grid.Row="0">Dł. podbloku:</Label>
-                        <ComboBox Name="FeedbackSizeComboBox" Margin="0,10,10,10"  SelectedIndex="0"  Height="20" Width="50" >
+                        <Label Margin="0,10,0,10"  Grid.Row="0">Dł. bloku:</Label>
+                        <ComboBox Name="BlockSizeComboBox" Margin="0,10,0,10"  SelectedIndex="0"  Height="20" Width="50" >
                             <ComboBoxItem Name="c1">128</ComboBoxItem>
                             <ComboBoxItem Name="c2">192</ComboBoxItem>
                             <ComboBoxItem Name="c3">256</ComboBoxItem>
                         </ComboBox>
+                        <Label Visibility="Collapsed" Name="FeedbackSizeLabel" Margin="0,10,0,10"  Grid.Row="0">Dł. podbloku:</Label>
+                        <ComboBox Visibility="Collapsed" Name="FeedbackdSizeComboBox" Margin="0,10,0,10"  SelectedIndex="0"  Height="20" Width="40" >
+                            <ComboBoxItem Name="cf1">8</ComboBoxItem>
+                            <ComboBoxItem Name="cf2">32</ComboBoxItem>
+                            <ComboBoxItem Name="cf3">64</ComboBoxItem>
+                        </ComboBox>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <ListBox Margin="25,0,10,0" Height="130" Width="200">
-                            <ListBoxItem>Maciek</ListBoxItem>
-                            <ListBoxItem>Marcin</ListBoxItem>
-                            <ListBoxItem>Kasia</ListBoxItem>
-                        </ListBox>
-                        <StackPanel HorizontalAlignment="Center">
-                            <Button Margin="10"  Width="150"> Dodaj użytkownika</Button>
-                            <Button Margin="10"> Usuń użytkownika</Button>
-                            <Button Margin="10"> Załaduj klucz</Button>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <ListBox Name="ReceiversListBox" Margin="25,0,10,0" Height="120" Width="200"/>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Margin="10"  Width="150" Click="AddReceiverButton_Click"> Dodaj użytkownika</Button>
+                            <Button Margin="10" Click="DeleteReceiverButton_Click">Usuń użytkownika</Button>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -54,8 +55,8 @@
                         <ProgressBar Name="ProgressBar"  Width="320" Height="20"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Margin="10,10,10,0" Height="60" Width="180" Click="CipherButton_Click">Szyfruj</Button>
-                        <Button Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
+                        <Button Name="EncryptButton"  IsEnabled="False" Margin="10,10,10,0" Height="60" Width="180" Click="CipherButton_Click">Szyfruj</Button>
+                        <Button Name="CancelEncryptButton" IsEnabled="True" Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
@@ -72,28 +73,24 @@
                         <Button Name="DecritpionDestinationFileButton" Margin="10,0,10,10" Content="Wybierz plik" Height="20" Click="OpenFileButton_Click"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label Margin="10,0,5,10"  Grid.Row="0">Klucz prywatny:</Label>
-                        <TextBox Margin="10,0,5,10" Width="200" Height="20"/>
-                        <Button Margin="10,0,10,10" Content="Wybierz plik" Height="20"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label Margin="10"  Grid.Row="0">Hasło:</Label>
-                        <TextBox Margin="0,10,10,10" Width="100" Height="20"/>
-                        <Label Margin="10"  Grid.Row="0">Powtórz hasło:</Label>
-                        <TextBox Margin="0,10,10,10" Width="100" Height="20"/>
+                        <ListBox Name="IdentietiesListBox" Margin="25,0,10,0" Height="120" Width="200" SelectionChanged="IdentietiesListBox_SelectionChanged"/>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Name="ConfirmIdentityButton" Margin="10"  Width="150" Click="ConfirmIdentityButton_Click">Zatwierdź tożsamość</Button>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Label Margin="10"  Grid.Row="0">Hasło:</Label>
+                                <PasswordBox Name="PasswordTextBox"  IsEnabled="False" Margin="0,10,10,10" Width="100" Height="20" PasswordChanged="PasswordTextBox_PasswordChanged"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Margin="10,10,10,10"  Grid.Row="0">Stan:</Label>
                         <ProgressBar Width="320" Height="20"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Margin="10,10,10,0" Height="60" Width="180" Click="DecipherButton_Click">Deszyfruj</Button>
-                        <Button Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
+                        <Button Name="DecryptButton" IsEnabled="False"  Margin="10,10,10,0" Height="60" Width="180" Click="DecipherButton_Click">Deszyfruj</Button>
+                        <Button Name="CancelDecrypt" IsEnabled="True" Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
                     </StackPanel>
                 </StackPanel>
-            </TabItem>
-            <TabItem Header="Pomoc">
-
             </TabItem>
         </TabControl>
     </Grid>

@@ -1,25 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace bskpreview
 {
     class CipherClass
     {
-        public byte[] Key { get; private set; }
-        public byte[] IV { get; private set; }
-        public byte[] EncryptedFile { get; private set; }
+        public byte[] Key { get; set; }
+        public byte[] IV { get; set; }
+        public byte[] EncryptedFile { get; set; }
 
         public string EncryptionSourceFilePath { get; set; }
         public string DecriptionSourceFilePath { get; set; }
         public string CipherMode { get; set; }
         public int KeySize { get; set; }
         public int BlockSize { get; set; }
+        public int FeedbackSize { get; set; }
 
         #region Public methods
 
@@ -33,6 +32,7 @@ namespace bskpreview
                     rijndaelManaged.Mode = this.parseToCipherMode(this.CipherMode);
                     rijndaelManaged.KeySize = this.KeySize;
                     rijndaelManaged.BlockSize = this.BlockSize;
+                    rijndaelManaged.FeedbackSize = this.FeedbackSize;
 
                     rijndaelManaged.GenerateIV();
                     rijndaelManaged.GenerateKey();
@@ -63,33 +63,69 @@ namespace bskpreview
             this.EncryptedFile = encryptedBytes;
         }
 
-        //public byte[] DecryptFile(string filePath, string cipherMode)
-        //{
-        //    byte[] decrypteBytes;
+        public byte[] DecryptFile(byte[] encryptedBytes)
+        {
+            using (var rijAlg = new RijndaelManaged())
+            {
+                rijAlg.Mode = this.parseToCipherMode(this.CipherMode);
+                rijAlg.BlockSize = this.BlockSize;
+                rijAlg.FeedbackSize = this.FeedbackSize;
+                rijAlg.Key = this.Key;
+                rijAlg.IV = this.IV;
 
-        //    using (RijndaelManaged rijAlg = new RijndaelManaged())
-        //    {
+                using (var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
+                using (var msDecrypt = new MemoryStream(encryptedBytes))
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    var decryptedBytes = new byte[encryptedBytes.Length];
+                    csDecrypt.Read(decryptedBytes, 0, decryptedBytes.Length);
+                    return decryptedBytes;
+                }
+            }
+        }
 
-        //        rijAlg.Mode = this.parseToCipherMode(cipherMode);
-        //        rijAlg.Key = this.tmpKey;
-        //        rijAlg.IV = this.tmpIV;
+        public byte[] EncryptSeesionKey(string publicKey)
+        {
+            const string pattern = @"<RSAKeyValue>.*<\/RSAKeyValue>";
+            publicKey = new Regex(pattern).Match(publicKey).Value;
 
-        //        var fileBytes = File.ReadAllBytes(filePath);
-        //        decrypteBytes = new byte[fileBytes.Length];
+            using (var rsa = new RSACryptoServiceProvider())
+            {
+                rsa.FromXmlString(publicKey);
+                return rsa.Encrypt(this.Key, false);
+            }
+        }
 
-        //        // Create the streams used for decryption.
-        //        using(var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
-        //        using (MemoryStream msDecrypt = new MemoryStream(fileBytes))
-        //        {
-        //            using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-        //            {
-        //                csDecrypt.Read(decrypteBytes, 0, decrypteBytes.Length);
-        //            }
-        //        }
-        //    }
+        public void DecryptSessionKey(byte[] privateKey, string password)
+        {
+            using (var rijndael = new RijndaelManaged())
+            using (var rsa = new RSACryptoServiceProvider())
+            {
+                var sha = new SHA1CryptoServiceProvider();
+                var shortcut = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+                var key = new byte[24];
 
-        //    return decrypteBytes;
-        //}
+                Array.Copy(shortcut, key, shortcut.Length);
+
+                rijndael.Mode = System.Security.Cryptography.CipherMode.ECB;
+                rijndael.KeySize = 192;
+                rijndael.Key = key;
+
+                byte[] decryptedPrivateKey;
+                using (var decryptor = rijndael.CreateDecryptor(rijndael.Key, rijndael.IV))
+                using (var msDecrypt = new MemoryStream(privateKey))
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    decryptedPrivateKey = new byte[privateKey.Length];
+                    csDecrypt.Read(decryptedPrivateKey, 0, decryptedPrivateKey.Length);
+                }
+
+                var xmlStringPrivateKey = Encoding.UTF8.GetString(decryptedPrivateKey);
+
+                rsa.FromXmlString(xmlStringPrivateKey);
+                this.Key = rsa.Decrypt(this.Key, false);
+            }
+        }
 
         #endregion
 
