@@ -56,7 +56,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Name="EncryptButton"  IsEnabled="False" Margin="10,10,10,0" Height="60" Width="180" Click="CipherButton_Click">Szyfruj</Button>
-                        <Button Name="CancelEncryptButton" IsEnabled="True" Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
+                        <Button Name="CancelEncryptButton" IsEnabled="False" Margin="10,10,10,0" Height="60" Width="180" Click="CancelEncryptButton_Click">Anuluj</Button>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
@@ -84,11 +84,11 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Margin="10,10,10,10"  Grid.Row="0">Stan:</Label>
-                        <ProgressBar Width="320" Height="20"/>
+                        <ProgressBar Name="ProgressBar2" Width="320" Height="20"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Name="DecryptButton" IsEnabled="False"  Margin="10,10,10,0" Height="60" Width="180" Click="DecipherButton_Click">Deszyfruj</Button>
-                        <Button Name="CancelDecrypt" IsEnabled="True" Margin="10,10,10,0" Height="60" Width="180">Anuluj</Button>
+                        <Button Name="CancelDecrypt" IsEnabled="False" Margin="10,10,10,0" Height="60" Width="180" Click="CancelDecrypt_Click">Anuluj</Button>
                     </StackPanel>
                 </StackPanel>
             </TabItem>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -13,15 +14,58 @@ namespace bskpreview
     public partial class MainWindow : Window
     {
         private MainController mainController;
+        private BackgroundWorker backgroundWorkerEncryption;
+        private BackgroundWorker backgroundWorkerDecryption;
 
         public MainWindow()
         {
             InitializeComponent();
             // FOR TESTING PURPOSES
-            //this.EncryptionSourceFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\interfejs2.JPG";
-            //this.EncryptionDestinationFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\szyfrogram";
-            //this.DecriptionSourceFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\szyfrogram";
-            //this.DecryptionDestinationFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\odszyfrowane";
+            this.EncryptionSourceFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\AES Rijndael Encryption Cipher Overview.mp4";
+            this.EncryptionDestinationFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\szyfrogram";
+            this.DecriptionSourceFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\szyfrogram";
+            this.DecryptionDestinationFileTextBox.Text = "C:\\Users\\Rolnik\\Desktop\\STUDIA\\s06\\BSK\\odszyfrowane";
+
+            backgroundWorkerEncryption = new BackgroundWorker {WorkerSupportsCancellation = true};
+            backgroundWorkerEncryption.DoWork += backgroundWorker_DoWork;
+            backgroundWorkerEncryption.RunWorkerCompleted += OnBackgroundWorkerEncryptionOnRunWorkerCompleted;
+
+            backgroundWorkerDecryption = new BackgroundWorker { WorkerSupportsCancellation = true};
+            backgroundWorkerDecryption.DoWork += backgroundWorkerDecryption_DoWork;
+            backgroundWorkerDecryption.RunWorkerCompleted += OnBackgroundWorkerEncryptionOnRunWorkerCompleted;
+        }
+
+        private void OnBackgroundWorkerEncryptionOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs args)
+        {
+            this.ProgressBar.IsIndeterminate = false;
+            this.ProgressBar2.IsIndeterminate = false;
+            this.CancelEncryptButton.IsEnabled = false;
+            this.CancelDecrypt.IsEnabled = false;
+        }
+
+        private void backgroundWorkerDecryption_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                this.mainController.DecryptFile();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                this.mainController.EncryptFile();
+                MessageBox.Show("Plik zaszyfrowany poprawnie!", "Sukces");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         #region Button Methods
@@ -30,10 +74,10 @@ namespace bskpreview
         {
             try
             {
+                this.CancelEncryptButton.IsEnabled = true;
                 this.ProgressBar.IsIndeterminate = true;
                 this.PassSettingsForEncryption();
-                this.ProgressBar.IsIndeterminate = false;
-                MessageBox.Show("Plik zaszyfrowany poprawnie!", "Sukces");
+                backgroundWorkerEncryption.RunWorkerAsync();
             }
             catch (Exception ex)
             {
@@ -45,9 +89,11 @@ namespace bskpreview
         {
             try
             {
-                this.ProgressBar.IsIndeterminate = true;
+                this.CancelDecrypt.IsEnabled = true;
+                this.ProgressBar2.IsIndeterminate = true;
                 this.PassSettingsForDecryption();
-                this.ProgressBar.IsIndeterminate = false;
+                backgroundWorkerDecryption.RunWorkerAsync();
+                this.CancelEncryptButton.IsEnabled = false;
             }
             catch (Exception ex)
             {
@@ -93,8 +139,8 @@ namespace bskpreview
         private void AddReceiverButton_Click(object sender, RoutedEventArgs e)
         {
             const string initialPath = @"C:\Users\Rolnik\Desktop\STUDIA\s06\BSK\projekt\Odbiorcy";
-            var openFileDialog = new OpenFileDialog { Multiselect = true};
-            if(Directory.Exists(initialPath))
+            var openFileDialog = new OpenFileDialog { Multiselect = true };
+            if (Directory.Exists(initialPath))
                 openFileDialog.InitialDirectory = initialPath;
             if (openFileDialog.ShowDialog() != true) return;
             foreach (var receiver in openFileDialog.FileNames.Select(fileName => new RSAPublicKey
@@ -191,7 +237,6 @@ namespace bskpreview
                 ReceiversRsaPublicKeys = this.ReceiversListBox.Items.OfType<RSAPublicKey>().ToList()
             };
 
-            this.mainController.EncryptFile();
         }
 
         private void PassSettingsForDecryption()
@@ -211,16 +256,7 @@ namespace bskpreview
                 Password = this.PasswordTextBox.Password,
                 Identity = this.IdentietiesListBox.SelectedItem.ToString()
             };
-
-            try
-            {
-                this.mainController.DecryptFile();
-            }
-            catch
-            {}
         }
-
-        #endregion
 
         private void ModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -243,6 +279,20 @@ namespace bskpreview
                 var feedbackdSizeComboBox = this.FeedbackdSizeComboBox;
                 if (feedbackdSizeComboBox != null) feedbackdSizeComboBox.Visibility = Visibility.Collapsed;
             }
+        }
+
+        #endregion
+
+        private void CancelEncryptButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(backgroundWorkerEncryption.WorkerSupportsCancellation)
+                backgroundWorkerEncryption.CancelAsync();
+        }
+
+        private void CancelDecrypt_Click(object sender, RoutedEventArgs e)
+        {
+            if (backgroundWorkerDecryption.WorkerSupportsCancellation)
+                backgroundWorkerDecryption.CancelAsync();
         }
     }
 }
