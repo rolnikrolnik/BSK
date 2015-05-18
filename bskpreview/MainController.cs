@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Windows;
 
@@ -37,7 +38,7 @@ namespace bskpreview
         public void EncryptFile()
         {
 
-            this.cipherClass = new CipherClass()
+            this.cipherClass = new CipherClass
             {
                 EncryptionSourceFilePath = this.EncryptionSourceFilePath,
                 CipherMode = this.CipherMode,
@@ -59,13 +60,12 @@ namespace bskpreview
                 Receivers = new List<Receiver>()
             };
 
-            foreach (var key in ReceiversRsaPublicKeys)
+            foreach (var receiver in ReceiversRsaPublicKeys.Select(key => new Receiver()
             {
-                var receiver = new Receiver()
-                {
-                    Name = key.Username,
-                    SessionKey = this.cipherClass.EncryptSeesionKey(File.ReadAllText(key.PathToKey))
-                };
+                Name = key.Username,
+                SessionKey = this.cipherClass.EncryptSeesionKey(File.ReadAllText(key.PathToKey))
+            }))
+            {
                 encryptedFileHeader.Receivers.Add(receiver);
             }
 
@@ -79,19 +79,19 @@ namespace bskpreview
             var encryptedFile = this.fileController.GetEncryptedFile(this.DecryptionSourceFilePath);
             
             var identity = encryptedFileHeader.Receivers.Find(x => x.Name == this.Identity);
-            byte[] privateKey = new byte[encryptedFileHeader.KeySize];
+            var privateKey = new byte[encryptedFileHeader.KeySize];
             try
             {
                 privateKey =
                     this.fileController.ReadFile(@"C:\Users\Rolnik\Desktop\STUDIA\s06\BSK\projekt\Tożsamości\" +
                                                  this.Identity);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 MessageBox.Show("Brak klucza publicznego dla danego odbiorcy!!");
             }
 
-            this.cipherClass = new CipherClass()
+            this.cipherClass = new CipherClass
             {
                 DecriptionSourceFilePath = this.DecryptionSourceFilePath,
                 CipherMode = encryptedFileHeader.CipherMode,
@@ -102,21 +102,13 @@ namespace bskpreview
                 Key = identity.SessionKey
             };
 
-            byte[] decryptedFile;
             try
             {
                 this.cipherClass.DecryptSessionKey(privateKey, this.Password);
-                decryptedFile = this.cipherClass.DecryptFile(encryptedFile);
+                var decryptedFile = this.cipherClass.DecryptFile(encryptedFile);
                 this.fileController.SaveFile(this.DecryptionDestinationFilePath, decryptedFile);
             }
-            catch (CryptographicException cryptographicException)
-            {
-                decryptedFile = new byte[encryptedFile.Length];
-                var random = new Random();
-                random.NextBytes(decryptedFile);
-                this.fileController.SaveFile(this.DecryptionDestinationFilePath, decryptedFile);
-            }
-            catch (Exception ex)
+            catch (Exception)
             {
                 MessageBox.Show("Ups! Coś poszło nie tak...");
             }

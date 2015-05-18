@@ -1,7 +1,7 @@
 ﻿<Window x:Class="bskpreview.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="450" Width="470">
+        Title="Rijndael - Łukasz Dawidowski 143205 gr.A3" Height="450" Width="470">
     <Grid Margin="0,0,0,0">
         <TabControl>
             <TabItem Header="Szyfrowanie">

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -37,7 +38,7 @@ namespace bskpreview
                     rijndaelManaged.GenerateIV();
                     rijndaelManaged.GenerateKey();
 
-                    ICryptoTransform encryptor = rijndaelManaged.CreateEncryptor(rijndaelManaged.Key, rijndaelManaged.IV);
+                    var encryptor = rijndaelManaged.CreateEncryptor(rijndaelManaged.Key, rijndaelManaged.IV);
 
                     this.Key = rijndaelManaged.Key;
                     this.IV = rijndaelManaged.IV;
@@ -67,19 +68,41 @@ namespace bskpreview
         {
             using (var rijAlg = new RijndaelManaged())
             {
-                rijAlg.Mode = this.parseToCipherMode(this.CipherMode);
-                rijAlg.BlockSize = this.BlockSize;
-                rijAlg.FeedbackSize = this.FeedbackSize;
-                rijAlg.Key = this.Key;
-                rijAlg.IV = this.IV;
-
-                using (var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
-                using (var msDecrypt = new MemoryStream(encryptedBytes))
-                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                try
                 {
-                    var decryptedBytes = new byte[encryptedBytes.Length];
-                    csDecrypt.Read(decryptedBytes, 0, decryptedBytes.Length);
-                    return decryptedBytes;
+                    rijAlg.Mode = this.parseToCipherMode(this.CipherMode);
+                    rijAlg.BlockSize = this.BlockSize;
+                    rijAlg.FeedbackSize = this.FeedbackSize;
+                    rijAlg.Key = this.Key;
+                    rijAlg.IV = this.IV;
+
+
+                    using (var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
+                    using (var msDecrypt = new MemoryStream(encryptedBytes))
+                    using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        var decryptedBytes = new byte[encryptedBytes.Length];
+                        csDecrypt.Read(decryptedBytes, 0, decryptedBytes.Length);
+                        return decryptedBytes;
+                    }
+                }
+                catch (CryptographicException)
+                {
+                    rijAlg.Mode = this.parseToCipherMode(this.CipherMode);
+                    rijAlg.BlockSize = this.BlockSize;
+                    rijAlg.FeedbackSize = this.FeedbackSize;
+                    rijAlg.Padding = PaddingMode.None;
+                    rijAlg.Key = this.Key;
+                    rijAlg.IV = this.IV;
+
+                    using (var decryptor = rijAlg.CreateDecryptor(rijAlg.Key, rijAlg.IV))
+                    using (var msDecrypt = new MemoryStream(encryptedBytes))
+                    using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        var decryptedBytes = new byte[encryptedBytes.Length];
+                        csDecrypt.Read(decryptedBytes, 0, decryptedBytes.Length);
+                        return decryptedBytes;
+                    }
                 }
             }
         }
@@ -109,6 +132,7 @@ namespace bskpreview
 
                 rijndael.Mode = System.Security.Cryptography.CipherMode.ECB;
                 rijndael.KeySize = 192;
+                rijndael.Padding = PaddingMode.None;
                 rijndael.Key = key;
 
                 byte[] decryptedPrivateKey;
@@ -122,8 +146,20 @@ namespace bskpreview
 
                 var xmlStringPrivateKey = Encoding.UTF8.GetString(decryptedPrivateKey);
 
-                rsa.FromXmlString(xmlStringPrivateKey);
-                this.Key = rsa.Decrypt(this.Key, false);
+                try
+                {
+                    rsa.FromXmlString(xmlStringPrivateKey);
+                    this.Key = rsa.Decrypt(this.Key, false);
+                }
+                catch (Exception)
+                {
+                    var badKey = Enumerable.Repeat((byte)0x0, KeySize / 4).ToList();
+                    for (var i = 0; i < key.Length; i++)
+                    {
+                        badKey[i] = key[i];
+                    }
+                    this.Key = badKey.ToArray();
+                }
             }
         }
 
@@ -146,7 +182,7 @@ namespace bskpreview
                     cipherMode = System.Security.Cryptography.CipherMode.CFB;
                     break;
                 case "OFB":
-                    cipherMode = System.Security.Cryptography.CipherMode.OFB;
+                    cipherMode = System.Security.Cryptography.CipherMode.CFB;
                     break;
                 default:
                     cipherMode = new System.Security.Cryptography.CipherMode();

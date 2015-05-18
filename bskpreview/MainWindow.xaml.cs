@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -91,14 +92,19 @@ namespace bskpreview
 
         private void AddReceiverButton_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog();
+            const string initialPath = @"C:\Users\Rolnik\Desktop\STUDIA\s06\BSK\projekt\Odbiorcy";
+            var openFileDialog = new OpenFileDialog { Multiselect = true};
+            if(Directory.Exists(initialPath))
+                openFileDialog.InitialDirectory = initialPath;
             if (openFileDialog.ShowDialog() != true) return;
-            var receiver = new RSAPublicKey()
+            foreach (var receiver in openFileDialog.FileNames.Select(fileName => new RSAPublicKey
             {
-                Username = System.IO.Path.GetFileNameWithoutExtension(openFileDialog.FileName),
+                Username = System.IO.Path.GetFileNameWithoutExtension(fileName),
                 PathToKey = openFileDialog.FileName
-            };
-            this.ReceiversListBox.Items.Add(receiver);
+            }))
+            {
+                this.ReceiversListBox.Items.Add(receiver);
+            }
             this.EncryptButton.IsEnabled = true;
         }
 
@@ -140,9 +146,9 @@ namespace bskpreview
             var sourcePath = this.DecriptionSourceFileTextBox.Text;
             if (string.IsNullOrEmpty(sourcePath))
             {
-                throw new ArgumentNullException("Plik nie wybrany!");
+                throw new ArgumentException("Ścieżki do plików niepoprawne - wybierz plik i ponów akcję!");
             }
-            this.mainController = new MainController()
+            this.mainController = new MainController
             {
                 DecryptionSourceFilePath = sourcePath
             };
@@ -151,6 +157,7 @@ namespace bskpreview
             {
                 this.IdentietiesListBox.Items.Add(identity.Name);
             }
+            this.IdentietiesListBox.SelectedIndex = 0;
         }
 
         private void PassSettingsForEncryption()
@@ -160,7 +167,7 @@ namespace bskpreview
             if (string.IsNullOrEmpty(sourcePath) ||
                 string.IsNullOrEmpty(destinationPath))
             {
-                throw new ArgumentNullException("Plik nie wybrany!");
+                throw new ArgumentException("Ścieżki do plików niepoprawne - wybierz plik i ponów akcję!");
             }
 
             int keySize;
@@ -194,7 +201,7 @@ namespace bskpreview
             if (string.IsNullOrEmpty(sourcePath) ||
                 string.IsNullOrEmpty(destinationPath))
             {
-                throw new ArgumentNullException("Plik nie wybrany!");
+                throw new ArgumentException("Ścieżki do plików niepoprawne - wybierz plik i ponów akcję!");
             }
 
             this.mainController = new MainController
